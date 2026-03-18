@@ -9,3 +9,5 @@ return trips, cars, cities
 trips_merged = trips.merge(TO COMPLETE) 
 # Merge with cities for car's city (joining on city_id) 
 trips_merged = trips_merged.merge(TO COMPLETE)
+trips_merged = trips_merged.drop(columns=["id_car", "city_id", "id_customer", 
+"id"])
