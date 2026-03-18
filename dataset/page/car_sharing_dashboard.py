@@ -17,3 +17,14 @@ def load_data():
 
 
 trips, cars, cities = load_data()
+trips_merged = trips.merge(
+    cars,
+    left_on="car_id",
+    right_on="id_car"
+)
+
+trips_merged = trips_merged.merge(
+    cities,
+    left_on="city_id",
+    right_on="id_city"
+)
