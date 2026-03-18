@@ -13,3 +13,5 @@ trips_merged = trips_merged.drop(columns=["id_car", "city_id", "id_customer",
 "id"])
 df['pickup_date'] = pd.to_datetime(df['pickup_time']).dt.date 
 df['pickup_date'] = pd.to_datetime(df['pickup_time']).dt.date
+cars_brand = st.sidebar.multiselect("Select the Car Brand", TO COMPLETE) 
+trips_merged = trips_merged[TO COMPLETE] 
