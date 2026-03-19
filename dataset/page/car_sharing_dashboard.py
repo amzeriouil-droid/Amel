@@ -31,3 +31,16 @@ trips_merged = trips_merged.merge(
 trips_merged = trips_merged.drop(
     columns=["id_car", "city_id", "id_customer", "id"]
 )
+trips_merged["pickup_time"] = pd.to_datetime(
+    trips_merged["pickup_time"]
+)
+
+trips_merged["pickup_date"] = (
+    trips_merged["pickup_time"].dt.date
+)trips_merged["pickup_time"] = pd.to_datetime(
+    trips_merged["pickup_time"]
+)
+
+trips_merged["pickup_date"] = (
+    trips_merged["pickup_time"].dt.date
+)
