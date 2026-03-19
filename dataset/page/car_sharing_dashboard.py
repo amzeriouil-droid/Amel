@@ -82,3 +82,38 @@ with col3:
         f"{total_distance:,.2f}"
     )
 st.write(trips_merged.head())
+st.header("Charts")
+
+c1, c2 = st.columns(2)
+
+with c1:
+
+    trips_day = (
+        trips_merged
+        .groupby("pickup_date")
+        .size()
+    )
+
+    st.line_chart(trips_day)
+
+    st.bar_chart(
+        trips_merged["model"].value_counts()
+    )
+
+with c2:
+
+    rev_city = (
+        trips_merged
+        .groupby("city_name")["revenue"]
+        .sum()
+    )
+
+    st.area_chart(rev_city)
+
+    avg_dist = (
+        trips_merged
+        .groupby("city_name")["distance"]
+        .mean()
+    )
+
+    st.bar_chart(avg_dist)
