@@ -56,3 +56,28 @@ if len(cars_brand) > 0:
     trips_merged = trips_merged[
         trips_merged["brand"].isin(cars_brand)
     ]
+total_trips = len(trips_merged)
+
+total_distance = trips_merged["distance"].sum()
+
+top_car = (
+    trips_merged
+    .groupby("model")["revenue"]
+    .sum()
+    .idxmax()
+)
+
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("Total Trips", total_trips)
+
+with col2:
+    st.metric("Top Car Model", top_car)
+
+with col3:
+    st.metric(
+        "Total Distance",
+        f"{total_distance:,.2f}"
+    )
