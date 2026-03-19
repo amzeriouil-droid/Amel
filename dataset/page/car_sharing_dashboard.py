@@ -28,3 +28,6 @@ trips_merged = trips_merged.merge(
     left_on="city_id",
     right_on="id_city"
 )
+trips_merged = trips_merged.drop(
+    columns=["id_car", "city_id", "id_customer", "id"]
+)
