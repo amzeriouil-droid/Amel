@@ -81,3 +81,4 @@ with col3:
         "Total Distance",
         f"{total_distance:,.2f}"
     )
+st.write(trips_merged.head())
