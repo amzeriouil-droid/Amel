@@ -4,6 +4,12 @@ import os
 
 st.set_page_config(page_title="Car Sharing Dashboard", layout="wide")
 st.title("Car Sharing Dashboard")
+
+
+# ======================
+# LOAD DATA
+# ======================
+
 BASE_DIR = os.path.dirname(__file__)
 
 @st.cache_data
@@ -17,6 +23,12 @@ def load_data():
 
 
 trips, cars, cities = load_data()
+
+
+# ======================
+# MERGE DATA
+# ======================
+
 trips_merged = trips.merge(
     cars,
     left_on="car_id",
@@ -28,22 +40,34 @@ trips_merged = trips_merged.merge(
     left_on="city_id",
     right_on="id_city"
 )
+
+
+# ======================
+# DROP COLUMNS
+# ======================
+
 trips_merged = trips_merged.drop(
     columns=["id_car", "city_id", "id_customer", "id"]
 )
+
+
+# ======================
+# DATE FORMAT
+# ======================
+
 trips_merged["pickup_time"] = pd.to_datetime(
     trips_merged["pickup_time"]
 )
 
 trips_merged["pickup_date"] = (
     trips_merged["pickup_time"].dt.date
-)trips_merged["pickup_time"] = pd.to_datetime(
-    trips_merged["pickup_time"]
 )
 
-trips_merged["pickup_date"] = (
-    trips_merged["pickup_time"].dt.date
-)
+
+# ======================
+# SIDEBAR FILTER
+# ======================
+
 st.sidebar.header("Filter")
 
 cars_brand = st.sidebar.multiselect(
@@ -56,6 +80,12 @@ if len(cars_brand) > 0:
     trips_merged = trips_merged[
         trips_merged["brand"].isin(cars_brand)
     ]
+
+
+# ======================
+# METRICS
+# ======================
+
 total_trips = len(trips_merged)
 
 total_distance = trips_merged["distance"].sum()
@@ -81,7 +111,19 @@ with col3:
         "Total Distance",
         f"{total_distance:,.2f}"
     )
+
+
+# ======================
+# PREVIEW
+# ======================
+
 st.write(trips_merged.head())
+
+
+# ======================
+# CHARTS
+# ======================
+
 st.header("Charts")
 
 c1, c2 = st.columns(2)
@@ -99,6 +141,7 @@ with c1:
     st.bar_chart(
         trips_merged["model"].value_counts()
     )
+
 
 with c2:
 
