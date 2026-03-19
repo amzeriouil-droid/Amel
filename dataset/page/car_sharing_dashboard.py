@@ -44,3 +44,15 @@ trips_merged["pickup_date"] = (
 trips_merged["pickup_date"] = (
     trips_merged["pickup_time"].dt.date
 )
+st.sidebar.header("Filter")
+
+cars_brand = st.sidebar.multiselect(
+    "Select the Car Brand",
+    trips_merged["brand"].unique()
+)
+
+if len(cars_brand) > 0:
+
+    trips_merged = trips_merged[
+        trips_merged["brand"].isin(cars_brand)
+    ]
