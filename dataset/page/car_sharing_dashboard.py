@@ -1,162 +1,108 @@
 import streamlit as st
 import pandas as pd
-import os
 
-st.set_page_config(page_title="Car Sharing Dashboard", layout="wide")
-st.title("Car Sharing Dashboard")
+st.title("🚗 Car Sharing Dashboard")
 
-
-# ======================
-# LOAD DATA
-# ======================
-
-BASE_DIR = os.path.dirname(__file__)
-
+# ── 1. LOAD DATA ──────────────────────────────────────────────────────────────
 @st.cache_data
 def load_data():
-
-    trips = pd.read_csv(os.path.join(BASE_DIR, "../trips.csv"))
-    cars = pd.read_csv(os.path.join(BASE_DIR, "../cars.csv"))
-    cities = pd.read_csv(os.path.join(BASE_DIR, "../cities.csv"))
-
+    trips  = pd.read_csv("data/trips.csv")
+    cars   = pd.read_csv("data/cars.csv")
+    cities = pd.read_csv("data/cities.csv")
     return trips, cars, cities
-
 
 trips, cars, cities = load_data()
 
+# ── 2. MERGE ──────────────────────────────────────────────────────────────────
+# trips ← cars (trip references car_id → cars.id)
+trips_merged = trips.merge(cars, left_on="car_id", right_on="id", suffixes=("", "_car"))
 
-# ======================
-# MERGE DATA
-# ======================
+# trips_merged ← cities (cars references city_id → cities.city_id)
+trips_merged = trips_merged.merge(cities, on="city_id", suffixes=("", "_city"))
 
-trips_merged = trips.merge(
-    cars,
-    left_on="car_id",
-    right_on="id_car"
-)
-
-trips_merged = trips_merged.merge(
-    cities,
-    left_on="city_id",
-    right_on="id_city"
-)
-
-
-# ======================
-# DROP COLUMNS
-# ======================
-
+# ── 3. DROP USELESS COLUMNS ───────────────────────────────────────────────────
 trips_merged = trips_merged.drop(
-    columns=["id_car", "city_id", "id_customer", "id"]
+    columns=["id", "city_id", "customer_id", "car_id"],
+    errors="ignore"
 )
 
+# ── 4. FIX DATE FORMAT ────────────────────────────────────────────────────────
+trips_merged["pickup_date"]  = pd.to_datetime(trips_merged["pickup_time"]).dt.date
+trips_merged["dropoff_date"] = pd.to_datetime(trips_merged["dropoff_time"]).dt.date
 
-# ======================
-# DATE FORMAT
-# ======================
-
-trips_merged["pickup_time"] = pd.to_datetime(
-    trips_merged["pickup_time"]
-)
-
-trips_merged["pickup_date"] = (
-    trips_merged["pickup_time"].dt.date
-)
-
-
-# ======================
-# SIDEBAR FILTER
-# ======================
-
-st.sidebar.header("Filter")
-
+# ── 5. SIDEBAR FILTERS ────────────────────────────────────────────────────────
+st.sidebar.header("Filters")
 cars_brand = st.sidebar.multiselect(
     "Select the Car Brand",
-    trips_merged["brand"].unique()
+    options=trips_merged["brand"].unique(),
+    default=trips_merged["brand"].unique()
 )
 
-if len(cars_brand) > 0:
+trips_merged = trips_merged[trips_merged["brand"].isin(cars_brand)]
 
-    trips_merged = trips_merged[
-        trips_merged["brand"].isin(cars_brand)
-    ]
-
-
-# ======================
-# METRICS
-# ======================
-
-total_trips = len(trips_merged)
-
+# ── 6. BUSINESS METRICS ───────────────────────────────────────────────────────
+total_trips    = len(trips_merged)
 total_distance = trips_merged["distance"].sum()
-
-top_car = (
-    trips_merged
-    .groupby("model")["revenue"]
-    .sum()
-    .idxmax()
-)
-
+top_car        = trips_merged.groupby("model")["revenue"].sum().idxmax()
 
 col1, col2, col3 = st.columns(3)
-
 with col1:
-    st.metric("Total Trips", total_trips)
-
+    st.metric(label="Total Trips", value=total_trips)
 with col2:
-    st.metric("Top Car Model", top_car)
-
+    st.metric(label="Top Car Model by Revenue", value=top_car)
 with col3:
-    st.metric(
-        "Total Distance",
-        f"{total_distance:,.2f}"
-    )
+    st.metric(label="Total Distance (km)", value=f"{total_distance:,.2f}")
 
-
-# ======================
-# PREVIEW
-# ======================
-
+# ── 7. PREVIEW DATAFRAME ──────────────────────────────────────────────────────
+st.subheader("Data Preview")
 st.write(trips_merged.head())
 
+# ── 8. VISUALIZATIONS ─────────────────────────────────────────────────────────
 
-# ======================
-# CHARTS
-# ======================
+# 8a. Trips Over Time
+st.subheader("📅 Trips Over Time")
+trips_over_time = (
+    trips_merged.groupby("pickup_date")
+    .size()
+    .reset_index(name="trips")
+    .set_index("pickup_date")
+)
+st.line_chart(trips_over_time)
 
-st.header("Charts")
+# 8b. Revenue Per Car Model
+st.subheader("💰 Revenue per Car Model")
+revenue_per_model = (
+    trips_merged.groupby("model")["revenue"]
+    .sum()
+    .sort_values(ascending=False)
+)
+st.bar_chart(revenue_per_model)
 
-c1, c2 = st.columns(2)
+# 8c. Cumulative Revenue Growth Over Time
+st.subheader("📈 Cumulative Revenue Growth Over Time")
+cumulative_revenue = (
+    trips_merged.groupby("pickup_date")["revenue"]
+    .sum()
+    .cumsum()
+    .reset_index()
+    .set_index("pickup_date")
+)
+st.area_chart(cumulative_revenue)
 
-with c1:
+# 8d. Number of Trips Per Car Model
+st.subheader("🚘 Number of Trips per Car Model")
+trips_per_model = (
+    trips_merged.groupby("model")
+    .size()
+    .sort_values(ascending=False)
+)
+st.bar_chart(trips_per_model)
 
-    trips_day = (
-        trips_merged
-        .groupby("pickup_date")
-        .size()
-    )
-
-    st.line_chart(trips_day)
-
-    st.bar_chart(
-        trips_merged["model"].value_counts()
-    )
-
-
-with c2:
-
-    rev_city = (
-        trips_merged
-        .groupby("city_name")["revenue"]
-        .sum()
-    )
-
-    st.area_chart(rev_city)
-
-    avg_dist = (
-        trips_merged
-        .groupby("city_name")["distance"]
-        .mean()
-    )
-
-    st.bar_chart(avg_dist)
+# 8e. Revenue by City
+st.subheader("🏙️ Revenue by City")
+revenue_by_city = (
+    trips_merged.groupby("city_name")["revenue"]
+    .sum()
+    .sort_values(ascending=False)
+)
+st.bar_chart(revenue_by_city)
